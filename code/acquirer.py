@@ -28,9 +28,9 @@ class Acquirer:
 		return f"Acquirer object(\n\
 		size: {self.size}\n\
 		train horizon: {self.train_horizon}%\n\
-		initial batch: {self.initial_batch}\n\
+		initial batch: {self.initial_batch}%\n\
 		exploration_batch: {self.exploration_batch}%\n\
-		batch sizes: {self.batch_sizes}%\n\
+		batch sizes: {self.batch_sizes}\n\
 		acquisition_function: {self.acquisition_function}\n\
 		)"
 
