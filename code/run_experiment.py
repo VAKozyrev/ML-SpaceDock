@@ -59,7 +59,7 @@ if __name__ == '__main__':
 		help="Path to the folder to save the results, if doesn't exist, create")
 
 	parser.add_argument('-m', '--model', type=str, required=False, default='logreg',
-			help='Machine learning model to apply (logreg, rf, mlp)')
+			help='Machine learning model to apply (logreg, rf, mlp, mlp_pytorch)')
 
 	parser.add_argument('-a', '--acquisition_function', type=str, required=False, default='greedy',
 			help='Accusition function to use for acquiring of new batches (greedy, thompson, sd_deviation)')
