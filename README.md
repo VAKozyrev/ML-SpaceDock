@@ -11,6 +11,6 @@ ML-SpaceDock is an active learning workflow aimed to retrive maximum number of h
 ## Installation 
 1. Clone the repository
 2. Create a conda environment
-'''
+```
 conda env create -f environment.yml
-'''
+```
