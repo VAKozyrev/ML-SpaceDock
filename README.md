@@ -6,7 +6,7 @@ ML-SpaceDock is an active learning workflow aimed to retrive maximum number of h
 ## Requirements
 1. Python 3.10
 2. Conda environment creted from environmet.yml
-3. Reagent building blocks and hit lists from data/
+3. Reagent building blocks and hit lists (provided in 'data' directory)
 
 ## Installation 
 1. Clone the repository
@@ -17,3 +17,6 @@ ML-SpaceDock is an active learning workflow aimed to retrive maximum number of h
 
 ## Data 
 
+## Reproduce the results of the paper
+
+## 
