@@ -13,19 +13,34 @@ def run_experiment(args):
 	save_dir = Path(args.save_dir)
 	save_dir.mkdir(exist_ok=True)
 
-	training_time = list()
-	predicting_time = list()
-	acquisition_time = list()
+	training_time, predicting_time, acquisition_time  = list(), list(), list()
 
 	X = ss.load_npz(args.fingerprints)
 	y = np.load(args.labels)
 
-	acquirer = Acquirer(y, args)
-	estimator = CommonEstimator(args)	
+	acquirer = Acquirer(
+		size = len(y),
+		initial_batch = args.initial_batch,
+		exploration_batch = args.exploration_batch, 
+		train_horizon = args.train_horizon,
+		acquisition_function = args.acquisition_function,
+		seed = args.seed
+	)
+
+	estimator = CommonEstimator(
+		size = len(y),
+		model = args.model,
+        n_folds = args.n_folds,
+        input_dim = X.shape[1],
+        seed = args.seed
+	)	
 
 	start = time.time()
 	acquirer.acquire_initial() 
+	np.save(Path(save_dir, f'{acquirer.batch_n}_batch_idxs.npy'), acquirer.selected_idxs)
 	acquisition_time.append(time.time() - start)
+	print(f"'0':{np.count_nonzero(y[acquirer.explored_idxs]==0)}, '1':{np.count_nonzero(y[acquirer.explored_idxs]==1)}")
+	
 
 	for _ in range(len(acquirer.batch_sizes)-1):
 
@@ -36,10 +51,13 @@ def run_experiment(args):
 		start = time.time()
 		y_mean, y_var = estimator.predict(X)
 		predicting_time.append(time.time() - start)
+		np.save(Path(save_dir, f'predictions.npy'), estimator.predictions_matrix)
 
 		start = time.time()
 		acquirer.acquire_batch(y_mean, y_var)
+		np.save(Path(save_dir, f'{acquirer.batch_n}_batch_idxs.npy'), acquirer.selected_idxs)
 		acquisition_time.append(time.time() - start)
+		print(f"'0':{np.count_nonzero(y[acquirer.explored_idxs]==0)}, '1':{np.count_nonzero(y[acquirer.explored_idxs]==1)}")
 
 	np.save(Path(save_dir, 'training_time.npy'), np.array(training_time))
 	np.save(Path(save_dir, 'predicting_time.npy'), np.array(predicting_time))
@@ -49,7 +67,7 @@ if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
 
-	parser.add_argument('-f', '--fingerprints', type=str, required=True,
+	parser.add_argument('-fp', '--fingerprints', type=str, required=True,
 		help='Path to the .npz sparse matrix with fingerprints')
 
 	parser.add_argument('-l', '--labels', type=str, required=True,
@@ -61,13 +79,13 @@ if __name__ == '__main__':
 	parser.add_argument('-m', '--model', type=str, required=False, default='logreg',
 			help='Machine learning model to apply (logreg, rf, mlp, mlp_pytorch)')
 
-	parser.add_argument('-a', '--acquisition_function', type=str, required=False, default='greedy',
+	parser.add_argument('-af', '--acquisition_function', type=str, required=False, default='greedy',
 			help='Accusition function to use for acquiring of new batches (greedy, thompson, sd_deviation)')
 
-	parser.add_argument('-th', '--train_horizon', type=float, required=False, default=10,
+	parser.add_argument('-th', '--train_horizon', type=float, required=False, default=5,
 			help='Up to what part of the dataset explore')
 
-	parser.add_argument('-ib', '--initial_batch', type=float, required=False, default=0.1,
+	parser.add_argument('-ib', '--initial_batch', type=float, required=False, default=0.5,
 			help='Size of the first batch as a portion of the whole dataset')
 
 	parser.add_argument('-eb', '--exploration_batch', type=float, required=False, default=0.5,

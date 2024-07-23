@@ -1,41 +1,54 @@
 import os
 import time
-from copy import deepcopy
 from pathlib import Path
+from copy import deepcopy
 
 import numpy as np
-from scipy import sparse as ss
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.neural_network import MLPClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import KFold
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression
 
 from models import BinaryClassifierNN
 
-
 class CommonEstimator:
 
-    def __init__(self, args):
-
+    def __init__(
+        self,
+        size: int,
+        model: str,
+        input_dim: int,
+        n_folds: int,
+        seed
+    ):
+        self.size = size
+        self.seed = seed
+        self.n_folds = n_folds
+        self.model_name = model
+        self.input_dim = input_dim
         self.model = {
-        'logreg': LogisticRegression(max_iter=5000, random_state=args.seed),
-        'rf': RandomForestClassifier(random_state=args.seed),
-        'mlp': MLPClassifier(random_state=args.seed),
-        'mlp_pytorch': BinaryClassifierNN(4096).to('cuda')
-        }[args.model]
+                    'logreg': LogisticRegression(max_iter=5000, random_state=self.seed),
+                    'rf': RandomForestClassifier(random_state=self.seed),
+                    'mlp': MLPClassifier(random_state=self.seed),
+                    'mlp_pytorch': BinaryClassifierNN(input_dim, random_state=self.seed)
+        }[model]
+        self.predictions_matrix = np.empty((self.n_folds,size)) 
 
-        self.seed = args.seed
-        self.save_dir = args.save_dir
+        print(self)
 
-        self.n_folds = args.n_folds
-
+    def __str__(self):
+        return f'\tEstimator(\n\
+            size: {self.size}\n\
+            number of folds: {self.n_folds}\n\
+            model: {self.model_name}\n\
+            input dimentionality: {self.input_dim}\n\
+            random state: {self.seed}\n\t)'
 
     def fit(self, X, y):
 
         self.trained_models=list()
 
-        print(f"Training the model {self.model}\n'0':{np.count_nonzero(y==0)}, '1':{np.count_nonzero(y==1)}")
-        print(round(100*len(y)/1000000, 2), round(100*np.count_nonzero(y==1)/32161, 2))
+        print(f"Training the model {self.model}\n")
 
         kf = KFold(n_splits=self.n_folds, shuffle=True, random_state=self.seed)
         for train_index, test_index in kf.split(y):
@@ -48,12 +61,10 @@ class CommonEstimator:
 
     def predict(self, X):
 
-        predictions_matrix = np.empty((len(self.trained_models),X.shape[0])) 
-
         for i, model in enumerate(self.trained_models):
+            if self.model_name == 'mlp_pytorch':
+                self.predictions_matrix[i] = model.predict_proba(X)
+            else:
+                self.predictions_matrix[i] = model.predict_proba(X)[:,1]
 
-            predictions_matrix[i] = model.predict_proba(X)[:,1]
-
-        np.save(Path(self.save_dir, f'predictions.npy'), predictions_matrix)
-
-        return predictions_matrix.mean(axis=0), predictions_matrix.std(axis=0)
+        return self.predictions_matrix.mean(axis=0), self.predictions_matrix.std(axis=0)
