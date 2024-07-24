@@ -24,6 +24,6 @@ ML-SpaceDock is an active learning workflow aimed to retrive maximum number of h
   1. Morgan fingerprints of the building blocks saved as .npy files
   2. Reaction rules matrix saved as .npy file
   3. Indexes of hit pairs saved as .npy file
-  All of these can be obtained from the list of SMILES strings of building blocks for each reaction type (data/CBLB/building_blocks.tsv) by running CBLB_descriptors_generation_and_indexing.ipynb notebook.
-  Some cells must be modified in case additional reactions are added or removed.
+All of these can be obtained from the list of SMILES strings of building blocks for each reaction type (data/CBLB/building_blocks.tsv) by running CBLB_descriptors_generation_and_indexing.ipynb notebook.
+Some cells must be modified in case additional reactions are added or removed.
  
