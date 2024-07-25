@@ -1,12 +1,9 @@
+from pathlib import Path
 import argparse
 import numpy as np 
 import heapq
 from tqdm import tqdm
 import os
-
-def load_explored_idxs(batch_number):
-        files = [f'{i}_batch_idxs.npy' for i in range(batch_number+1)]
-        return np.hstack([np.load(file) for file in files])
 
 def element_generator(file_paths):
     for file in file_paths:
@@ -15,13 +12,16 @@ def element_generator(file_paths):
             yield element
 
 def select_batch(args):
+
+	work_dir = Path(args.path)
+
 	min_heap = []
 	heap_size = args.size
-	explored_idxs = load_explored_idxs(args.batch_n)
+	explored_idxs = np.hstack([np.load(idxs) for idxs in args.explored_indexes])
 	explored_idxs = set(explored_idxs.tolist())
-	file_paths = [f'preds/{i}_preds.npy' for i in range(len(os.listdir('preds/')))]
+	file_paths = [Path(work_dir, f'{i}_preds.npy') for i in range(len(os.listdir(work_dir)))]
 
-	for i, element in enumerate(tqdm(element_generator(file_paths))):
+	for i, element in enumerate(tqdm(element_generator(file_paths))):     
 		if i not in explored_idxs:
 			if len(min_heap) < heap_size:
 				heapq.heappush(min_heap, (element, i))
@@ -29,15 +29,23 @@ def select_batch(args):
 				heapq.heappushpop(min_heap, (element, i))
 
 	top_indexes = np.array([index for value, index in heapq.nlargest(args.size, min_heap)])
-	np.save(f'{args.batch_n + 1}_batch_idxs.npy', top_indexes)
+	np.save(args.save_path, top_indexes)
 
 if __name__ == '__main__':
 	
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-s', '--size', type=int, required=True, default=1676772,
+	parser.add_argument('-s', '--size', type=int, required=True,
 						help='Size of the batch to acquire')
-	parser.add_argument('-n', '--batch_n', type=int, required=True,
-						help='batch number')
+
+	parser.add_argument('-ei', '--explored_indexes', type=str, nargs='+', required=True,
+						help='Paths to .npy files with already explored indexes')
+
+	parser.add_argument('-p', '--path', type=str, required=True,
+						help='Path to directory where preds.npy files are stored')
+
+	parser.add_argument('-sp', '--save_path', type=str, required=True,
+						help='Path where to save .npy file with acquired indexes')
+
 	args = parser.parse_args()
 
 	select_batch(args)

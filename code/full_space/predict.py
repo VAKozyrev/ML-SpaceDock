@@ -5,6 +5,7 @@ from torch import optim
 from torch.utils.data import Dataset, DataLoader
 import numpy as np
 from tqdm import tqdm
+from pathlib import Path
 
 class BinaryClassifierNN(nn.Module):
 
@@ -12,11 +13,9 @@ class BinaryClassifierNN(nn.Module):
 		super().__init__()
 
 		self.linear_relu_stack = nn.Sequential(
-			nn.Linear(input_dim, 200),
+			nn.Linear(input_dim, 100),
 			nn.ReLU(),
-			nn.Linear(200, 200),
-			nn.ReLU(),
-			nn.Linear(200, 1),
+			nn.Linear(100, 1),
 			nn.Sigmoid()
 		)
 
@@ -65,18 +64,21 @@ class PairsDataset(Dataset):
 
 def train(args):
 
+	save_dir = Path(args.save_dir)
+	save_dir.mkdir(exist_ok=True)
+
 	device = ("cuda" if torch.cuda.is_available() else "cpu")
 	print(f'Using {device} device')
 
 	dataset = PairsDataset(
-		bb_fps = [np.load(f'../data/CBLB/bb_{i}.npy').astype(bool) for i in range(21)], 
-		rules = np.load('../data/CBLB/reactions_rules.npy')
+		bb_fps = [np.load(fps).astype(bool) for fps in args.fingerprints], 
+		rules = np.load(args.reaction_rules)
 	) 
 
 	dataloader = DataLoader(dataset, batch_size=2048, shuffle=False, num_workers=8, pin_memory=True)
 
 	model = BinaryClassifierNN(4107).to(device)
-	model.load_state_dict(torch.load(f'model_batch_{args.batch_n}.pt'))
+	model.load_state_dict(torch.load(args.model))
 
 	pred = np.array([])
 	count = 0
@@ -85,19 +87,29 @@ def train(args):
 			X = X.to(device)
 			X = X.to(dtype=torch.float) 
 			pred = np.hstack([pred, model(X).squeeze().to('cpu').numpy()])
-			#print(len(np.unique(model(X).squeeze().to('cpu').numpy())))
 			if i!=0 and i % 2000 == 0:
-				np.save(f'preds/{count}_preds.npy', pred)
+				np.save(Path(save_dir, f'{count}_preds.npy'), pred)
 				pred = np.array([])
 				count += 1
-		np.save(f'preds/{count}_preds.npy', pred)
+		np.save(Path(save_dir, f'{count}_preds.npy'), pred)
 
 			
 if __name__=='__main__':
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-n', '--batch_n', type=int, required=True, default=0,
-						help='Number of the batch')
+
+	parser.add_argument('-fps', '--fingerprints', type=str, nargs='+', required=True,
+						help='List of paths to .npy files containing fingerprints of building blocks')
+
+	parser.add_argument('-r', '--reaction_rules', type=str, required=True,
+						help='Path to .npy file containing reaction rules matrix')
+
+	parser.add_argument('-m', '--model', type=str, required=True,
+						help='Path to the model state dictionary')
+
+	parser.add_argument('-sd', '--save_dir', type=str, required=True,
+						help='Directory to save the predictions')
+
 	args = parser.parse_args()
 
 	train(args)

@@ -12,11 +12,9 @@ class BinaryClassifierNN(nn.Module):
 		super().__init__()
 
 		self.linear_relu_stack = nn.Sequential(
-			nn.Linear(input_dim, 200),
+			nn.Linear(input_dim, 100),
 			nn.ReLU(),
-			nn.Linear(200, 200),
-			nn.ReLU(),
-			nn.Linear(200, 1),
+			nn.Linear(100, 1),
 			nn.Sigmoid()
 		)
 
@@ -75,10 +73,10 @@ def train(args):
 	print(f'Using {device} device')
 
 	dataset = PairsDataset(
-		bb_fps = [np.load(f'../data/CBLB/bb_{i}.npy').astype(bool) for i in range(21)], 
-		rules = np.load('../data/CBLB/reactions_rules.npy'), 
-		hits_idxs = np.load('../data/CBLB/hits_idxs_q_0.6.npy'),
-		train_idxs = np.hstack([np.load(f'{i}_batch_idxs.npy') for i in range(args.batch_n+1)]),
+		bb_fps = [np.load(fps).astype(bool) for fps in args.fingerprints], 
+		rules = np.load(args.reaction_rules), 
+		hits_idxs = np.load(args.hit_indexes),
+		train_idxs = np.hstack([np.load(batch) for batch in args.train_indexes]),
 		batch_size = 8
 	) 
 	print(f"Training set size: {dataset.size}, hits: {dataset.y.sum()}")
@@ -115,7 +113,7 @@ def train(args):
 				no_change += 1
 			if np.array(step_loss).mean() < trainingEpoch_loss.min(): 
 				best_param = model.state_dict()
-				torch.save(best_param, f'model_batch_{args.batch_n}.pt')
+				torch.save(best_param, args.save_path)
 			
 		trainingEpoch_loss = np.append(trainingEpoch_loss, np.array(step_loss).mean())
 
@@ -127,8 +125,23 @@ def train(args):
 if __name__=='__main__':
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-n', '--batch_n', type=int, required=True, default=0,
-						help='Number of the batch')
+	parser.add_argument('-fps', '--fingerprints', type=str, nargs='+', required=True,
+						help='List of paths to .npy files containing fingerprints of building blocks')
+
+	parser.add_argument('-r', '--reaction_rules', type=str, required=True,
+						help='Path to .npy file containing reaction rules matrix')
+
+	parser.add_argument('-hi', '--hit_indexes', type=str, required=True,
+						help='Paths to .npy files with indexes of hit pairs')
+
+	parser.add_argument('-ti', '--train_indexes', type=str, nargs='+', required=True,
+						help='Paths to .npy files with indexes of training subset')
+
+	parser.add_argument('-sp', '--save_path', type=str, required=True,
+						help='Path to save the model as .pt file')
+
+	parser.add_argument('-s', '--seed', type=int, required=False, default=None,
+						help='Random seed to select the subset')
 	args = parser.parse_args()
 
 	train(args)

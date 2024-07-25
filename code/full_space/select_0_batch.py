@@ -1,25 +1,43 @@
+"""
+The script selects the initial random batch to train the model
+"""
+
 import argparse
-import random
 import numpy as np
+
 
 def select_initial_batch(args):
 
-	bbs_fps = [np.load(f'../data/CBLB/bb_{i}.npy').astype(bool) for i in range(21)]
-	reactions_rules = np.load('../data/CBLB/reactions_rules.npy')
+	bbs_fps = [np.load(fps).astype(bool) for fps in args.fingerprints]
+	reactions_rules = np.load(args.reaction_rules)
 
 	pool_size = np.array([len(bbs_fps[reaction[0]])*len(bbs_fps[reaction[1]]) for reaction in reactions_rules]).sum()
 	print(f'Pool size: {pool_size}')
 
-	batch_idxs = random.sample(range(pool_size), args.size)
+	rng = np.random.default_rng(seed=args.seed)
+	batch_idxs = rng.choice(pool_size, args.batch_size)
 	print(f'Selected batch size: {len(batch_idxs)}')
 
-	np.save('0_batch_idxs.npy', batch_idxs)
+	np.save(args.save_path, batch_idxs)
+
 
 if __name__ == '__main__':
 
 	parser = argparse.ArgumentParser()
-	parser.add_argument('-s', '--size', type=int, required=True, default=1676772,
+	parser.add_argument('-fps', '--fingerprints', type=str, nargs='+', required=True,
+						help='List of paths to .npy files containing fingerprints of building blocks')
+
+	parser.add_argument('-r', '--reaction_rules', type=str, required=True,
+						help='Path to .npy file containing reaction rules matrix')
+
+	parser.add_argument('-bs', '--batch_size', type=int, required=True,
 						help='Size of the batch to acquire')
+
+	parser.add_argument('-sp', '--save_path', type=str, required=True,
+						help='Path to save .npy file with the indexes of acquired batch')
+
+	parser.add_argument('-s', '--seed', type=int, required=False, default=None,
+						help='Random seed to select the subset')
 	args = parser.parse_args()
 
 	select_initial_batch(args)
