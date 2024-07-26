@@ -1,14 +1,30 @@
+"""
+The script trains a pytorch MLP model and saves its parameters as .pt file
+
+Example
+-------
+python train.py -fps bb_0.npy bb_1.npy bb_2.npy -r reaction_rules.npy -hi hits_idxs_q_0.6.npy -ti 0_batch_idxs.npy 1_batch_idxs.npy -sp ../result/1_batch_model.pt'
+	Trains the model on indexes 0_batch_idxs.npy and 1_batch_idxs.npy and saves its parameters as ./result/1_batch_model.pt
+"""
+
 import argparse
+import numpy as np
 import torch
 import torch.nn as nn
 from torch import optim
 from torch.utils.data import Dataset, DataLoader
-import numpy as np
 from tqdm import tqdm
 
 class BinaryClassifierNN(nn.Module):
+	"""
+	Class of the MLP model to train
 
-	def __init__(self, input_dim):	
+	Atributes
+	---------
+	input_dim: int 
+		dimentionality of the input, if each building block is encoded with 2048 bits and we have 11 reactions, input_dim = 2048*2 + 11 = 4107
+	"""
+	def __init__(self, input_dim: int):	
 		super().__init__()
 
 		self.linear_relu_stack = nn.Sequential(
@@ -22,7 +38,26 @@ class BinaryClassifierNN(nn.Module):
 		return self.linear_relu_stack(x)
 
 class PairsDataset(Dataset):
+	"""
+	Dataset class for retrieving fingerprints and labels by the index of a pair
+	
+	Atributes
+	---------
 
+
+	Parameters
+	----------
+	bb_fps: List[np.array]
+		list of numpy array with building blocks' fingerprints
+	rules: np.array
+		np.array with reaction rules matrix
+	hits_idxs: np.array 
+		np.array with indexes of hit pairs
+	train_idxs: np.array
+		np.array with indexes of pairs to use durimg the training
+	batch_size: int
+		size of the batch to use while retriving the pairs
+	"""
 	def __init__(self, bb_fps, rules, hits_idxs, train_idxs, batch_size):
 
 		reaction_sizes = np.array([len(bb_fps[rule[0]])*len(bb_fps[rule[1]]) for rule in rules])

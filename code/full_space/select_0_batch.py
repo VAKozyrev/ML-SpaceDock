@@ -1,5 +1,8 @@
 """
-The script selects the initial random batch to train the model
+The script selects the initial random batch to train the model, saves the result as .npy array
+Example:
+	python select_0_batch.py -fps bb_0.npy bb_1.npy bb_2.npy -r reaction_rules.npy -bs 10000000 -sp ../result/0_batch_idxs.npy -s 1
+Will output an array of 10000000 random integers in range from 0 to size of the chem space and save them as ../result/0_batch_idxs.npy file
 """
 
 import argparse
@@ -11,10 +14,10 @@ def select_initial_batch(args):
 	bbs_fps = [np.load(fps).astype(bool) for fps in args.fingerprints]
 	reactions_rules = np.load(args.reaction_rules)
 
-	pool_size = np.array([len(bbs_fps[reaction[0]])*len(bbs_fps[reaction[1]]) for reaction in reactions_rules]).sum()
+	pool_size = np.array([len(bbs_fps[reaction[0]])*len(bbs_fps[reaction[1]]) for reaction in reactions_rules]).sum() #Calculate size of the chem space
 	print(f'Pool size: {pool_size}')
 
-	rng = np.random.default_rng(seed=args.seed)
+	rng = np.random.default_rng(seed=args.seed)            #Generate random indexes
 	batch_idxs = rng.choice(pool_size, args.batch_size)
 	print(f'Selected batch size: {len(batch_idxs)}')
 
