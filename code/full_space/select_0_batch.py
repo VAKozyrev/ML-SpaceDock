@@ -17,7 +17,7 @@ def select_initial_batch(args):
 	pool_size = np.array([len(bbs_fps[reaction[0]])*len(bbs_fps[reaction[1]]) for reaction in reactions_rules]).sum() #Calculate size of the chem space
 	print(f'Pool size: {pool_size}')
 
-	rng = np.random.default_rng(seed=args.seed)            #Generate random indexes
+	rng = np.random.default_rng(seed=args.seed)          
 	batch_idxs = rng.choice(pool_size, args.batch_size)
 	print(f'Selected batch size: {len(batch_idxs)}')
 

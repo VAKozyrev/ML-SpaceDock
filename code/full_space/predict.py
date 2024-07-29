@@ -26,6 +26,7 @@ class PairsDataset(Dataset):
 
 	def __init__(self, bb_fps, rules):
 
+		self.input_dim = 4096+len(rules)
 		self.fps = np.vstack([fps for fps in bb_fps])
 		self.reaction_sizes = np.array([len(bb_fps[rule[0]])*len(bb_fps[rule[1]]) for rule in rules])
 		self.reaction_borders = np.cumsum(self.reaction_sizes) - 1
@@ -41,7 +42,7 @@ class PairsDataset(Dataset):
 		return self.size
 
 	def __getitem__(self, idx):
-		output = np.empty(4107, dtype=bool)
+		output = np.empty(self.input_dim, dtype=bool)
 		# Reaction number
 		reaction_n  = np.searchsorted(self.reaction_borders, idx)
 		#Local index
@@ -62,7 +63,7 @@ class PairsDataset(Dataset):
 
 		return output
 
-def train(args):
+def predict(args):
 
 	save_dir = Path(args.save_dir)
 	save_dir.mkdir(exist_ok=True)
@@ -77,7 +78,7 @@ def train(args):
 
 	dataloader = DataLoader(dataset, batch_size=2048, shuffle=False, num_workers=8, pin_memory=True)
 
-	model = BinaryClassifierNN(4107).to(device)
+	model = BinaryClassifierNN(dataset.input_dim).to(device)
 	model.load_state_dict(torch.load(args.model))
 
 	pred = np.array([])
@@ -112,4 +113,4 @@ if __name__=='__main__':
 
 	args = parser.parse_args()
 
-	train(args)
+	predict(args)

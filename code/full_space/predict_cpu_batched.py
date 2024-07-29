@@ -31,6 +31,8 @@ class PairsDataset(Dataset):
 		bb_sizes = np.array([len(fps) for fps in bb_fps])
 		bb_borders = np.cumsum(bb_sizes) - 1
 
+		self.input_dim = 4096+len(rules)
+
 		self.size = end - start
 		self.total_size =  reaction_sizes.sum()
 
@@ -56,7 +58,7 @@ class PairsDataset(Dataset):
 		return self.size
 
 	def __getitem__(self, idx):
-		output = np.empty(4107, dtype=bool)
+		output = np.empty(self.input_dim, dtype=bool)
 		fp1, fp2 = self.bb_fps[self.bb1_idxs[idx]], self.bb_fps[self.bb2_idxs[idx]]
 		np.bitwise_and(fp1, fp2, out=output[:2048])
 		np.bitwise_xor(fp1, fp2, out=output[2048:4096])
@@ -75,7 +77,7 @@ def train(args):
 
 	dataloader = DataLoader(dataset, batch_size=4096, shuffle=False, num_workers=8)
 
-	model = BinaryClassifierNN(4107)
+	model = BinaryClassifierNN(dataset.input_dim)
 	model.load_state_dict(torch.load(args.model, map_location='cpu'))
 
 	pred = np.empty(args.end-args.start)

@@ -70,6 +70,8 @@ class PairsDataset(Dataset):
 		self.batch_size = batch_size
 		self.num_full_batches = self.size//self.batch_size
 
+		self.input_dim = 4096+len(rules)
+
 		self.bb_fps = np.vstack([fps for fps in bb_fps])
 		reaction_fps = np.identity(len(rules), dtype=bool)
 		y = np.zeros(self.total_size, dtype=bool)
@@ -87,14 +89,14 @@ class PairsDataset(Dataset):
 
 		self.bb1_idxs = bb1_idxs[:self.num_full_batches * self.batch_size].reshape(-1, self.batch_size)
 		self.bb2_idxs = bb2_idxs[:self.num_full_batches * self.batch_size].reshape(-1, self.batch_size)
-		self.reaction_fps = reaction_fps[reaction_numbers[:self.num_full_batches * self.batch_size]].reshape(-1, self.batch_size, 11)
+		self.reaction_fps = reaction_fps[reaction_numbers[:self.num_full_batches * self.batch_size]].reshape(-1, self.batch_size, len(rules))
 		self.y = y[:self.num_full_batches * self.batch_size].reshape(-1, self.batch_size)
 
 	def __len__(self):
 		return self.size//self.batch_size
 
 	def __getitem__(self, idx):
-		output = np.empty(shape=(self.batch_size, 4107), dtype=bool)
+		output = np.empty(shape=(self.batch_size, self.input_dim), dtype=bool)
 		fp1, fp2 = self.bb_fps[self.bb1_idxs[idx]], self.bb_fps[self.bb2_idxs[idx]]
 		np.bitwise_and(fp1, fp2, out=output[:,:2048])
 		np.bitwise_xor(fp1, fp2, out=output[:,2048:4096])
@@ -118,7 +120,7 @@ def train(args):
 
 	dataloader = DataLoader(dataset, batch_size=256, shuffle=True, num_workers=8, pin_memory=True)
 
-	model = BinaryClassifierNN(4107).to(device)
+	model = BinaryClassifierNN(dataset.input_dim).to(device)
 	loss_fn = nn.BCELoss()
 	optimizer = optim.Adam(model.parameters(), lr=1e-3, weight_decay=1e-4)
 	model.train()
