@@ -169,7 +169,7 @@ python predict_cpu_batched.py -fps bb_0.npy bb_1.npy bb_2.npy -r reaction_rules.
 ```
 This command makes predictions for pairs with indexes from 100,000,000 to 109,999,999 using the model saved in `0_batch_model.pt` and saves the predictions as 100000000_110000000_preds.npy
 
-III. Results exploration
+### III. Results exploration
 
 The results of the active learning workflow are the indexes retrieved on each iteration `0_batch_idxs.npy` `1_batch_idxs.npy` ... 
 The results of the experiment can be explored in `results_full_space.ipynb` notebook
