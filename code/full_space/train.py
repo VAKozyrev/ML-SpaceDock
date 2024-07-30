@@ -60,6 +60,8 @@ class PairsDataset(Dataset):
 	"""
 	def __init__(self, bb_fps, rules, hits_idxs, train_idxs, batch_size):
 
+		np.random.shuffle(train_idxs)
+
 		reaction_sizes = np.array([len(bb_fps[rule[0]])*len(bb_fps[rule[1]]) for rule in rules])
 		reaction_borders = np.cumsum(reaction_sizes) - 1
 		bb_sizes = np.array([len(fps) for fps in bb_fps])
@@ -111,7 +113,7 @@ def train(args):
 
 	dataset = PairsDataset(
 		bb_fps = [np.load(fps).astype(bool) for fps in args.fingerprints], 
-		rules = np.load(args.reaction_rules), 
+		rules = np.load(args.reaction_rules).astype(np.int8), 
 		hits_idxs = np.load(args.hit_indexes),
 		train_idxs = np.hstack([np.load(batch) for batch in args.train_indexes]),
 		batch_size = 8

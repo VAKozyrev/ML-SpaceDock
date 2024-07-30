@@ -107,7 +107,7 @@ if __name__=='__main__':
 		help='Index of a building block pair from which script should start the prediction')
 
 	parser.add_argument('-ed', '--end', type=int, required=True,
-		help='Index of a building block pair from which script should start the prediction')
+		help='Index of a building block pair from which script should end the prediction')
 
 	args = parser.parse_args()
 
