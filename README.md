@@ -173,3 +173,7 @@ This command makes predictions for pairs with indexes from 100,000,000 to 109,99
 
 The results of the active learning workflow are the indexes retrieved on each iteration `0_batch_idxs.npy` `1_batch_idxs.npy` ... 
 The results of the experiment can be explored in `results_full_space.ipynb` notebook
+
+## Citation 
+https://pubs.acs.org/doi/full/10.1021/acs.jcim.4c02097
+
